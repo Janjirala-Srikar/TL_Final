@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+// import sendMail from "../utils/mailer.js"; // Uncomment if using it
 
 // JWT token generator
 const generatorToken = (id) => {
@@ -15,21 +16,18 @@ const isValidEmail = (email) => {
 
 // Password validation helper
 const isValidPassword = (password) => {
-  // At least 6 characters, 1 letter, 1 number
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,}$/;
   return passwordRegex.test(password);
 };
 
 export const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
+    const { firstName, lastName, email, password, confirmPassword, isClub } = req.body;
 
-    // Input validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    // Trim and validate inputs
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
     const trimmedEmail = email.trim().toLowerCase();
@@ -41,15 +39,12 @@ export const registerUser = async (req, res) => {
     }
 
     if (!isValidEmail(trimmedEmail)) {
-      return res
-        .status(400)
-        .json({ message: "Please provide a valid email address" });
+      return res.status(400).json({ message: "Please provide a valid email address" });
     }
 
     if (!isValidPassword(password)) {
       return res.status(400).json({
-        message:
-          "Password must be at least 6 characters with at least one letter and one number",
+        message: "Password must be at least 6 characters with one letter and one number",
       });
     }
 
@@ -68,9 +63,14 @@ export const registerUser = async (req, res) => {
       lastName: trimmedLastName,
       email: trimmedEmail,
       password: hashedPassword,
+      isClub: isClub || false, // Include from backend_web
     });
+
     await newUser.save();
     const token = generatorToken(newUser._id);
+
+    // Optional: await sendMail(email, "Welcome!", "Thanks for registering!");
+
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -81,7 +81,7 @@ export const registerUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Register Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -90,18 +90,13 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Input validation
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please provide email and password" });
+      return res.status(400).json({ message: "Please provide email and password" });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     if (!isValidEmail(trimmedEmail)) {
-      return res
-        .status(400)
-        .json({ message: "Please provide a valid email address" });
+      return res.status(400).json({ message: "Please provide a valid email address" });
     }
 
     const user = await User.findOne({ email: trimmedEmail });
@@ -113,6 +108,7 @@ export const loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
     const token = generatorToken(user._id);
     res.status(200).json({
       message: "Login successful",
@@ -120,11 +116,13 @@ export const loginUser = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         email: user.email,
-        role: user.role, // Add this line
+        role: user.role,       // From main repo
+        isClub: user.isClub,   // From backend_web
       },
       token,
     });
   } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };

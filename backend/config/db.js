@@ -86,3 +86,4 @@ export const seedQuizzes = async () => {
     console.log("Error seeding quizzes:", error.message);
   }
 };
+export default connectDB;
