@@ -29,7 +29,9 @@ router.post('/register', async function register(req, res) {
 
     //regex added for proper mail
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    // const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if(!emailRegex.test(email)){
       return res.status(400).json({message: "Please enter a valid email account"});
     }
@@ -76,7 +78,9 @@ router.post('/login', async function login(req, res) {
     }
 
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    // const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if(!emailRegex.test(email)){
       return res.status(400).json({message: "Invalid email format"});
     }
