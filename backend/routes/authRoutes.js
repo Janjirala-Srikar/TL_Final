@@ -25,6 +25,15 @@ router.post('/register', async function register(req, res) {
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Please fill all fields' });
     }
+
+
+    //regex added for proper mail
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if(!emailRegex.test(email)){
+      return res.status(400).json({message: "Please enter a valid email account"});
+    }
+
     if (password !== confirmPassword) {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
@@ -64,6 +73,12 @@ router.post('/login', async function login(req, res) {
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
+    }
+
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if(!emailRegex.test(email)){
+      return res.status(400).json({message: "Invalid email format"});
     }
 
     const user = await User.findOne({ email });
