@@ -28,11 +28,9 @@ router.post('/register', async function register(req, res) {
 
 
     //regex added for proper mail
-    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if(!emailRegex.test(email)){
+    const formattedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[\w.-]+@(gmail|outlook|yahoo)\.com$/;
+    if(!emailRegex.test(formattedEmail)){
       return res.status(400).json({message: "Please enter a valid email account"});
     }
 
@@ -40,7 +38,7 @@ router.post('/register', async function register(req, res) {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
 
-    const emailExists = await User.findOne({ email });
+    const emailExists = await User.findOne({ email: formattedEmail });
     if (emailExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -48,7 +46,7 @@ router.post('/register', async function register(req, res) {
     const newUser = await User.create({
       firstName,
       lastName,
-      email,
+      email: formattedEmail,
       password
     });
 
@@ -72,6 +70,7 @@ router.post('/register', async function register(req, res) {
 router.post('/login', async function login(req, res) {
   try {
     const { email, password } = req.body;
+    const formattedEmail = email.trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
@@ -79,13 +78,14 @@ router.post('/login', async function login(req, res) {
 
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     // const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[\w.-]+@(gmail|outlook|yahoo)\.com$/;
 
-    if(!emailRegex.test(email)){
+    if(!emailRegex.test(formattedEmail)){
       return res.status(400).json({message: "Invalid email format"});
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: formattedEmail });
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
