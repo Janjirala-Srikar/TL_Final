@@ -125,3 +125,41 @@ export const getUserProgress = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch user progress" });
   }
 };
+
+
+// recordExerciseAttempt route
+
+export const recordExerciseAttempt = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { courseId, exerciseId, questionId, xp } = req.body;
+
+    let userProgress = await UserProgress.findOne({ userId });
+
+    if (!userProgress) {
+      userProgress = new UserProgress({
+        userId,
+        exerciseXP: new Map(),
+        totalExerciseXP: 0,
+        completedExercises: [],
+      });
+    }
+
+    // Add XP for this exercise question
+    const currentXP = userProgress.exerciseXP.get(courseId) || 0;
+    userProgress.exerciseXP.set(courseId, currentXP + xp);
+    userProgress.totalExerciseXP += xp;
+
+   
+    if (!userProgress.completedExercises.some(id => id.toString() === exerciseId)) {
+      userProgress.completedExercises.push(exerciseId);
+    }
+
+    await userProgress.save();
+
+    return res.status(200).json({ success: true, totalExerciseXP: userProgress.totalExerciseXP });
+  } catch (error) {
+    console.error("Error in recordExerciseAttempt:", error);
+    return res.status(500).json({ message: "Failed to record exercise attempt" });
+  }
+};
