@@ -205,7 +205,7 @@ router.post('/forgot-password',async(req,res)=>{
       },
     });
 
-    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
