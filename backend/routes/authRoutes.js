@@ -205,7 +205,8 @@ router.post('/forgot-password',async(req,res)=>{
       },
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `https://finalproj-mu-one.vercel.app/reset-password/${resetToken}`;
+
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
