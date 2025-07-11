@@ -227,4 +227,53 @@ router.post('/forgot-password',async(req,res)=>{
     res.status(500).json({ message: 'Something went wrong' });
   }
   });
+
+/* ========== RESET PASSWORD ========== */
+
+router.post('/reset-password/:resetToken', async(req,res)=>{
+  const resetToken = req.params.resetToken;
+  const {password, confirmPassword} = req.body;
+
+  if(!password || !confirmPassword){
+    return res.status(400).json({
+      message: 'Please provide both passwords'
+    });
+  }
+
+  if(password!=confirmPassword){
+    return res.status(400).json({
+      message: 'Password do not match'
+    });
+  }
+
+  //hashing the recieved token 
+  try {
+    // Hash the received token
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Find user with matching token and unexpired resetPasswordExpires
+    const user = await User.findOne({
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: { $gt: Date.now() }  // token still valid
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired password reset token' });
+    }
+
+    // Update user password and clear reset token fields
+    user.password = password;  // will be hashed by mongoose pre-save middleware
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error('Reset Password Error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+
+});
+
 export default router;
