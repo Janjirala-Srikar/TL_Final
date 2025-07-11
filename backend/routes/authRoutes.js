@@ -3,6 +3,10 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+//forgot password dependencies
+
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 import User from '../models/User.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -173,4 +177,54 @@ router.get('/me', protect, async function getMe(req, res) {
   }
 });
 
+
+
+/* ==========FORGOT PASSWORD ========== */
+router.post('/forgot-password',async(req,res)=>{
+  const {email} = req.body;
+
+  try{
+    const user = await User.findOne({email});
+    if(!user){
+      return res.status(404).json({message: 'User not found'});
+    }
+
+    //token generation 
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = tokenHash;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+      const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER,   // e.g. 'yourgmail@gmail.com'
+        pass: process.env.EMAIL_PASS,   // Gmail App Password
+      },
+    });
+
+    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Password Reset Link',
+      html: `
+        <p>Hello ${user.firstName},</p>
+        <p>You requested a password reset. Click the link below to set a new password:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>This link expires in 15 minutes.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ message: 'Reset email sent successfully' });
+  } catch (err) {
+    console.error('Forgot Password Error:', err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+  });
 export default router;
