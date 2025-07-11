@@ -1,32 +1,37 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import connectDB from './config/db.js';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { connectDB } from "./config/db.js";
 
 // Route imports
-import exerciseRoutes from './routes/exerciseRoutes.js';
-import courseRoutes from './routes/courseRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import userProgressRoutes from './routes/userProgressRoutes.js';
-import paymentRoutes from './routes/paymentRoutes.js';
-import certificationRoutes from './routes/certificationRoutes.js';
-import compilerRoutes from './routes/compilerRoutes.js';
-import xpRoutes from './routes/xpRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js';
+import exerciseRoutes from "./routes/exerciseRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import userProgressRoutes from "./routes/userProgressRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import certificationRoutes from "./routes/certificationRoutes.js";
+import compilerRoutes from "./routes/compilerRoutes.js";
+import xpRoutes from "./routes/xpRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
-import miniRouter from './routes/mini.js';
-import majorRouter from './routes/major.js';
-import bookingRouterModule from './routes/Booking.js';
+import miniRouter from "./routes/mini.js";
+import majorRouter from "./routes/major.js";
+import bookingRouterModule from "./routes/Booking.js";
 const bookingRouter = bookingRouterModule.default || bookingRouterModule;
-import projectRouter from './routes/Project.js';
-import midProjectRoutes from './routes/midProjectRoutes.js';
-import transactionRoutes from './routes/transactionRoutes.js';
-import uiLibraryRoutes from './routes/uiLibraryRoutes.js';
+import projectRouter from "./routes/Project.js";
+import midProjectRoutes from "./routes/midProjectRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import uiLibraryRoutes from "./routes/uiLibraryRoutes.js";
 
-dotenv.config();
+// Get the directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure dotenv to load from the parent directory
+dotenv.config({ path: path.join(__dirname, "../.env") });
 const app = express();
 
 // 🧠 MongoDB Connection
@@ -37,16 +42,17 @@ const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
-    const devOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+    const devOrigins = ["http://localhost:3000", "http://localhost:5173"];
     if (devOrigins.includes(origin)) return callback(null, true);
 
-    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL)
+      return callback(null, true);
 
     if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return callback(null, true);
 
-    return callback(new Error('Not allowed by CORS'));
+    return callback(new Error("Not allowed by CORS"));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -56,15 +62,18 @@ app.use(cors(corsOptions));
 // Extra headers for older setups or vercel
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && origin.includes('.vercel.app')) {
-    res.header('Access-Control-Allow-Origin', origin);
+  if (origin && origin.includes(".vercel.app")) {
+    res.header("Access-Control-Allow-Origin", origin);
   }
 
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, Content-Length, X-Requested-With"
+  );
+  res.header("Access-Control-Allow-Credentials", "true");
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.sendStatus(200);
   } else {
     next();
@@ -75,83 +84,82 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // 🖼️ Static files (Core Java images)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 app.use(
   "/CoreJava_Images",
-  express.static(path.join(__dirname, "backend/markdown-content/CoreJava/CoreJava_Images"))
+  express.static(
+    path.join(__dirname, "markdown-content/CoreJava/CoreJava_Images")
+  )
 );
 
 // ✅ AUTH + LEARN Routes
-app.use('/api/exercises', exerciseRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/user-progress', userProgressRoutes);
-app.use('/api/certificate', paymentRoutes);
-app.use('/api/certification', certificationRoutes);
-app.use('/api/compiler', compilerRoutes);
-app.use('/api/xp', xpRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use("/api/exercises", exerciseRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user-progress", userProgressRoutes);
+app.use("/api/certificate", paymentRoutes);
+app.use("/api/certification", certificationRoutes);
+app.use("/api/compiler", compilerRoutes);
+app.use("/api/xp", xpRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ✅ BUILD PAGE Routes
-app.use('/api/mini-projects', miniRouter);
-app.use('/api/major-projects', majorRouter);
-app.use('/api/bookings', bookingRouter);
-app.use('/api/projects', projectRouter);
-app.use('/api/mid-projects', midProjectRoutes);
-app.use('/api/transactions', transactionRoutes);
+app.use("/api/mini-projects", miniRouter);
+app.use("/api/major-projects", majorRouter);
+app.use("/api/bookings", bookingRouter);
+app.use("/api/projects", projectRouter);
+app.use("/api/mid-projects", midProjectRoutes);
+app.use("/api/transactions", transactionRoutes);
 app.use(uiLibraryRoutes); // Handles its own path
 
 // 🧪 Health Check
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   res.json({
-    status: 'OK',
+    status: "OK",
     timestamp: new Date().toISOString(),
-    cors: 'enabled',
-    env: process.env.NODE_ENV || 'development',
+    cors: "enabled",
+    env: process.env.NODE_ENV || "development",
   });
 });
 
 // 🛑 404 Handler
 app.use((req, res) => {
   res.status(404).json({
-    message: 'Endpoint not found',
+    message: "Endpoint not found",
     path: req.path,
     method: req.method,
     availableRoutes: [
-      '/api/exercises',
-      '/api/courses',
-      '/api/users',
-      '/api/auth',
-      '/api/user-progress',
-      '/api/certificate',
-      '/api/certification',
-      '/api/compiler',
-      '/api/xp',
-      '/api/dashboard',
-      '/api/mini-projects',
-      '/api/major-projects',
-      '/api/bookings',
-      '/api/projects',
-      '/api/mid-projects',
-      '/api/transactions',
-      '/health',
-    ]
+      "/api/exercises",
+      "/api/courses",
+      "/api/users",
+      "/api/auth",
+      "/api/user-progress",
+      "/api/certificate",
+      "/api/certification",
+      "/api/compiler",
+      "/api/xp",
+      "/api/dashboard",
+      "/api/mini-projects",
+      "/api/major-projects",
+      "/api/bookings",
+      "/api/projects",
+      "/api/mid-projects",
+      "/api/transactions",
+      "/health",
+    ],
   });
 });
 
 // ❌ Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Stack:', err.stack);
+  console.error("❌ Error:", err.message);
+  if (process.env.NODE_ENV === "development") {
+    console.error("Stack:", err.stack);
   }
 
   res.status(err.status || 500).json({
-    message: err.message || 'Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message || "Server Error",
+    error: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 
@@ -159,6 +167,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🔒 CORS: Dynamic origin matching enabled`);
 });
