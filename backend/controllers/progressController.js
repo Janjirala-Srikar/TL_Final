@@ -1,5 +1,3 @@
-
-
 import UserProgress from "../models/UserProgress.js";
 
 export const updateCourseProgress = async (req, res) => {
@@ -15,14 +13,14 @@ export const updateCourseProgress = async (req, res) => {
     progress.courseProgress = {
       courseTitle,
       progressPercent,
-      estimatedTimeRemaining: estimatedTimeRemaining || "0min"
+      estimatedTimeRemaining: estimatedTimeRemaining || "0min",
     };
 
     await progress.save();
 
     res.status(200).json({
       message: "Course progress updated",
-      courseProgress: progress.courseProgress
+      courseProgress: progress.courseProgress,
     });
   } catch (err) {
     console.error("Update Course Progress Error:", err);
@@ -30,7 +28,7 @@ export const updateCourseProgress = async (req, res) => {
   }
 };
 
-//updating exercise progress 
+//updating exercise progress
 export const updateExerciseProgress = async (req, res) => {
   const { totalExercises, completedExercises } = req.body;
   const userId = req.user._id;
@@ -43,21 +41,20 @@ export const updateExerciseProgress = async (req, res) => {
 
     progress.exerciseProgress = {
       totalExercises,
-      completedExercises
+      completedExercises,
     };
 
     await progress.save();
 
     res.status(200).json({
       message: "Exercise progress updated",
-      exerciseProgress: progress.exerciseProgress
+      exerciseProgress: progress.exerciseProgress,
     });
   } catch (err) {
     console.error("Update Exercise Progress Error:", err);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 //updating calender activity for the user
 export const updateCalendarActivity = async (req, res) => {
@@ -75,7 +72,7 @@ export const updateCalendarActivity = async (req, res) => {
 
     res.status(200).json({
       message: "Calendar activity updated",
-      calendarActivity: Object.fromEntries(progress.calendarActivity)
+      calendarActivity: Object.fromEntries(progress.calendarActivity),
     });
   } catch (error) {
     console.error("Update Calendar Activity Error:", error);

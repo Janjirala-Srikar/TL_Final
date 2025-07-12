@@ -31,12 +31,15 @@ const getEligibilityData = async (userId, courseId) => {
 
   // Fetch user progress
   const userProgress = await UserProgress.findOne({ userId });
-  const userQuizXP = userProgress?.courseXP.get(courseId) || 0;
-  const userExerciseXP = userProgress?.exerciseXP.get(courseId) || 0;
+  const courseIdStr = courseId.toString();
+  const userQuizXP = userProgress?.courseXP.get(courseIdStr) || 0;
+  const userExerciseXP = userProgress?.exerciseXP.get(courseIdStr) || 0;
   const userTotalXP = userQuizXP + userExerciseXP;
 
+  // Set eligibility threshold (e.g., 80%)
+  // Removed requiredXP as per user request
   return {
-    eligible: userTotalXP >= totalPossibleXP,
+    eligible: userTotalXP >= Math.floor(totalPossibleXP * 0.8),
     userTotalXP,
     totalPossibleXP,
     details: { userQuizXP, userExerciseXP, totalQuizXP, totalExerciseXP },

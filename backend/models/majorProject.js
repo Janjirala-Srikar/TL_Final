@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const majorProjectSchema = new mongoose.Schema({
   title: String,
@@ -11,5 +11,5 @@ const majorProjectSchema = new mongoose.Schema({
   guideSteps: [String],
 });
 
-const MajorProject = mongoose.model('MajorProject', majorProjectSchema);
+const MajorProject = mongoose.model("MajorProject", majorProjectSchema);
 export default MajorProject;

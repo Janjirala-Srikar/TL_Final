@@ -22,7 +22,8 @@ const isValidPassword = (password) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, confirmPassword, isClub } = req.body;
+    const { firstName, lastName, email, password, confirmPassword, isClub } =
+      req.body;
 
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "Please fill all fields" });
@@ -39,12 +40,15 @@ export const registerUser = async (req, res) => {
     }
 
     if (!isValidEmail(trimmedEmail)) {
-      return res.status(400).json({ message: "Please provide a valid email address" });
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid email address" });
     }
 
     if (!isValidPassword(password)) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters with one letter and one number",
+        message:
+          "Password must be at least 6 characters with one letter and one number",
       });
     }
 
@@ -91,12 +95,16 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Please provide email and password" });
+      return res
+        .status(400)
+        .json({ message: "Please provide email and password" });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     if (!isValidEmail(trimmedEmail)) {
-      return res.status(400).json({ message: "Please provide a valid email address" });
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid email address" });
     }
 
     const user = await User.findOne({ email: trimmedEmail });
@@ -116,8 +124,8 @@ export const loginUser = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         email: user.email,
-        role: user.role,       // From main repo
-        isClub: user.isClub,   // From backend_web
+        role: user.role, // From main repo
+        isClub: user.isClub, // From backend_web
       },
       token,
     });

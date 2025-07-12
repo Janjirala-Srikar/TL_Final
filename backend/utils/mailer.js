@@ -1,15 +1,17 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
-const transporterPromise = nodemailer.createTestAccount().then(testAccount => {
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass
-    }
+const transporterPromise = nodemailer
+  .createTestAccount()
+  .then((testAccount) => {
+    return nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
   });
-});
 
 export async function sendMail(to, subject, text) {
   const transporter = await transporterPromise;
@@ -17,7 +19,7 @@ export async function sendMail(to, subject, text) {
     from: '"TechLearn Admin" <no-reply@techlearn.com>',
     to,
     subject,
-    text
+    text,
   });
-  console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
 }

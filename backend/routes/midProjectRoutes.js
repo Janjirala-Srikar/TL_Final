@@ -1,5 +1,8 @@
 import express from "express";
-import { getAllMidProjects, getMidProject } from "../controllers/midProjectController.js";
+import {
+  getAllMidProjects,
+  getMidProject,
+} from "../controllers/midProjectController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import clubMiddleware from "../middleware/clubMiddleware.js";
 

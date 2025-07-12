@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
+import { insertJavaMarkdownContent } from "./config/insertJavaMarkdown.js";
+import { insertPythonMarkdownContent } from "./config/insertPythonMarkdown.js";
 
 // Route imports
 import exerciseRoutes from "./routes/exerciseRoutes.js";
@@ -26,16 +28,15 @@ import midProjectRoutes from "./routes/midProjectRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import uiLibraryRoutes from "./routes/uiLibraryRoutes.js";
 
-// Get the directory name for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure dotenv to load from the parent directory
-dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config();
 const app = express();
 
 // 🧠 MongoDB Connection
 await connectDB();
+
+// Seed courses with markdown content
+await insertJavaMarkdownContent();
+await insertPythonMarkdownContent();
 
 // 🌐 CORS Configuration
 const corsOptions = {
@@ -60,30 +61,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Extra headers for older setups or vercel
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && origin.includes(".vercel.app")) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-
-  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, Content-Length, X-Requested-With"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+// ...existing code...
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // 🖼️ Static files (Core Java images)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(
   "/CoreJava_Images",
   express.static(
@@ -121,7 +107,6 @@ app.get("/health", (req, res) => {
     env: process.env.NODE_ENV || "development",
   });
 });
-
 // 🛑 404 Handler
 app.use((req, res) => {
   res.status(404).json({

@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 import Course from "../models/Course.js";
 import Quiz from "../models/Quiz.js";
+import UserProgress from "../models/UserProgress.js";
 import {
   checkIfQuestionAnswered,
   recordQuizAttempt,
 } from "./userProgressController.js";
+
 export const getAllCourses = async (req, res) => {
   try {
     const courses = await Course.find();
@@ -18,30 +20,36 @@ export const getAllCourses = async (req, res) => {
 
 export const getCourseById = async (req, res) => {
   const { courseId } = req.params;
-  console.log(courseId);
   try {
     const course = await Course.findById(courseId)
       .populate("topics.quizId")
       .populate("topics.notesId");
+
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
-    // map topics to alias _id as topicId because It was confusing
+
     const topics = course.topics.map((topic) => ({
       topicId: topic._id,
       title: topic.title,
-      quizId: topic.quizId ? topic.quizId._id : null, // Ensure quizId is populated
-      notesId: topic.notesId ? topic.notesId._id || topic.notesId : null, // Ensure notesId is included
+      quizId: topic.quizId ? topic.quizId._id : null,
+      notesId: topic.notesId ? topic.notesId._id : null,
       notes:
         topic.notesId && topic.notesId.content ? topic.notesId.content : null,
     }));
+
     res.status(200).json({
-      course,
+      _id: course._id,
+      title: course.title,
+      description: course.description,
+      level: course.level,
+      topics: topics,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching course details", error: error.message });
+    res.status(500).json({
+      message: "Error fetching course details",
+      error: error.message,
+    });
   }
 };
 
@@ -59,11 +67,12 @@ export const getQuizByCourseId = async (req, res) => {
       return res.status(404).json({ message: "Quiz not found for this topic" });
 
     return res.status(200).json({
+      quizId: quiz._id,
       topic: quiz.topicTitle,
       questions: quiz.questions.map(({ question, options, _id }) => ({
         question,
         options,
-        _id, // I didn't want to send this but I think It can be used for verifying the correct answer using this Id
+        _id,
       })),
     });
   } catch (error) {
@@ -78,93 +87,69 @@ export const submitQuiz = async (req, res) => {
     const { courseId } = req.params;
     const { quizId, questionId, selectedOption } = req.body;
 
-    // Input validation
-    if (!mongoose.Types.ObjectId.isValid(courseId)) {
-      return res.status(400).json({ message: "Invalid Course Id" });
-    }
-    if (!mongoose.Types.ObjectId.isValid(quizId)) {
-      return res.status(400).json({ message: "Invalid Quiz Id" });
-    }
-    if (!mongoose.Types.ObjectId.isValid(questionId)) {
-      return res.status(400).json({ message: "Invalid Question Id" });
-    }
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
-    // Validate selectedOption
-    if (selectedOption === undefined || selectedOption === null) {
-      return res.status(400).json({ message: "Selected option is required" });
-    }
+    const question = quiz.questions.id(questionId);
+    if (!question)
+      return res.status(404).json({ message: "Question not found" });
 
-    const selectedOptionNum = Number(selectedOption);
-    if (isNaN(selectedOptionNum) || selectedOptionNum < 0) {
-      return res
-        .status(400)
-        .json({ message: "Selected option must be a valid number" });
-    }
+    const isCorrect = question.correctAnswer === selectedOption;
 
-    // Ensure the quiz belongs to the course
-    const quiz = await Quiz.findOne({ _id: quizId, courseId });
-    if (!quiz) {
-      return res
-        .status(404)
-        .json({ message: "Quiz not found for this course" });
-    }
-
-    // Check if user already attempted the quiz or this question (no mutation)
-    const checkResult = await checkIfQuestionAnswered({
+    const alreadyAnswered = await checkIfQuestionAnswered({
       userId: req.user._id,
       quizId,
       questionId,
     });
-    if (checkResult.error) {
-      return res.status(400).json({ message: checkResult.error });
+
+    if (alreadyAnswered.error) {
+      return res.status(400).json({ message: alreadyAnswered.error });
     }
 
-    const question = quiz.questions.find(
-      (q) => q._id.toString() === questionId
-    );
-    if (!question) {
-      return res
-        .status(404)
-        .json({ message: "Question not found in this quiz" });
-    }
-
-    // Validate selectedOption is within valid range
-    if (selectedOptionNum >= question.options.length) {
-      return res
-        .status(400)
-        .json({ message: "Selected option is out of range" });
-    }
-
-    const isCorrect = selectedOptionNum === question.correctAnswer;
-    let xp = isCorrect ? 10 : 0; // 10 XP for correct answer, 0 for incorrect
-
-    // Always record the attempt (correct or incorrect)
+    const xpAwarded = isCorrect ? 10 : 0;
     const result = await recordQuizAttempt({
       userId: req.user._id,
-      quizId,
       courseId,
+      quizId,
       questionId,
-      xp,
+      xp: xpAwarded,
     });
 
+    // ✅ Find next unanswered question
+    const userProgress = await UserProgress.findOne({ userId: req.user._id });
+    const answeredQuestionIds =
+      userProgress.answeredQuestions.get(quizId.toString()) || [];
+
+    let nextQuestionId = null;
+    const isQuizComplete = answeredQuestionIds.length === quiz.questions.length;
+
+    if (!isQuizComplete) {
+      for (let i = 0; i < quiz.questions.length; i++) {
+        const qId = quiz.questions[i]._id.toString();
+        if (!answeredQuestionIds.some((id) => id.toString() === qId)) {
+          nextQuestionId = quiz.questions[i]._id;
+          break;
+        }
+      }
+    }
+
     res.status(200).json({
-      questionId: question._id,
-      selectedOption: selectedOptionNum,
-      correctOption: question.correctAnswer,
-      explanation: question.explanation || "No explanation available",
-      correct: isCorrect,
-      receivedXP: xp,
-      quizComplete: result.quizComplete,
-      progress: {
-        answered: result.totalAnswered,
-        total: result.totalQuestions,
-        remaining: result.totalQuestions - result.totalAnswered,
+      isCorrect,
+      correctAnswer: question.correctAnswer,
+      xpAwarded,
+      explanation: question.explanation || null,
+      quizData: {
+        quizId: quiz._id,
+        totalQuestions: quiz.questions.length,
+        answeredQuestions: result.totalAnswered,
+        remainingQuestions: quiz.questions.length - result.totalAnswered,
+        isQuizComplete: result.quizComplete,
+        nextQuestionId: nextQuestionId,
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred while submitting the quiz answer",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Quiz submission failed", error: error.message });
   }
 };

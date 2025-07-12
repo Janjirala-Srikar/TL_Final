@@ -1,4 +1,4 @@
-import MiniProject from '../models/miniProject.js';
+import MiniProject from "../models/miniProject.js";
 
 export const getAll = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ export const create = async (req, res) => {
 export const get = async (req, res) => {
   try {
     const mini = await MiniProject.findById(req.params.id);
-    if (!mini) return res.status(404).json({ message: 'Not found' });
+    if (!mini) return res.status(404).json({ message: "Not found" });
     res.json(mini);
   } catch (err) {
     res.status(500).json({ message: err });
@@ -32,8 +32,8 @@ export const get = async (req, res) => {
 export const remove = async (req, res) => {
   try {
     const mini = await MiniProject.findByIdAndDelete(req.params.id);
-    if (!mini) return res.status(404).json({ message: 'Not found' });
-    res.json({ message: 'Deleted successfully' });
+    if (!mini) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err });
   }

@@ -3,7 +3,7 @@ import Quiz from "../models/Quiz.js";
 import Course from "../models/Course.js";
 import Exercise from "../models/Exercise.js";
 
-// Check if a question has already been answered (no mutation)
+// Check if a question has already been answered
 export const checkIfQuestionAnswered = async ({
   userId,
   quizId,
@@ -21,7 +21,7 @@ export const checkIfQuestionAnswered = async ({
   return { answered: false };
 };
 
-// Update progress and XP for any answer attempt (correct or incorrect)
+// Update progress and XP for any answer attempt
 export const recordQuizAttempt = async ({
   userId,
   quizId,
@@ -34,35 +34,44 @@ export const recordQuizAttempt = async ({
     userProgress = new UserProgress({
       userId,
       completedQuizzes: [],
-      courseXP: {},
+      courseXP: new Map(),
       totalCourseXP: 0,
-      answeredQuestions: {},
+      answeredQuestions: new Map(),
+      // ✅ Add missing fields for consistency
+      exerciseXP: new Map(),
+      totalExerciseXP: 0,
+      completedExercises: [],
     });
   }
 
+  // ✅ Consistent string conversion
+  const quizIdStr = quizId.toString();
+  const courseIdStr = courseId.toString();
+
   // Add this questionId to answeredQuestions for this quiz
-  const answered = userProgress.answeredQuestions.get(quizId.toString()) || [];
+  const answered = userProgress.answeredQuestions.get(quizIdStr) || [];
   answered.push(questionId);
-  userProgress.answeredQuestions.set(quizId.toString(), answered);
+  userProgress.answeredQuestions.set(quizIdStr, answered);
 
   // Add XP for this question
-  userProgress.courseXP.set(
-    courseId,
-    (userProgress.courseXP.get(courseId) ?? 0) + xp
-  );
-  userProgress.totalCourseXP += xp;
+  const currentCourseXP = userProgress.courseXP.get(courseIdStr) || 0;
+  userProgress.courseXP.set(courseIdStr, currentCourseXP + xp);
+
+  // Recalculate total course XP
+  userProgress.totalCourseXP = Array.from(
+    userProgress.courseXP.values()
+  ).reduce((sum, xp) => sum + xp, 0);
+
   await userProgress.save();
 
-  // Check if quiz is now complete (all questions answered)
+  // Check if quiz is complete
   const quiz = await Quiz.findById(quizId);
   const isQuizComplete = quiz && answered.length === quiz.questions.length;
 
-  // Mark quiz as completed if all questions are answered
+  // ✅ Mark quiz as completed when all questions are answered
   if (
     isQuizComplete &&
-    !userProgress.completedQuizzes
-      .map((id) => id.toString())
-      .includes(quizId.toString())
+    !userProgress.completedQuizzes.some((id) => id.toString() === quizIdStr)
   ) {
     userProgress.completedQuizzes.push(quizId);
     await userProgress.save();
@@ -81,8 +90,9 @@ export const getUserProgress = async (req, res) => {
   const userId = req.user._id;
 
   try {
+    // ✅ Include answeredQuestions and completedExercises in the select
     const userProgress = await UserProgress.findOne({ userId }).select(
-      "courseXP exerciseXP totalCourseXP totalExerciseXP completedQuizzes"
+      "courseXP exerciseXP totalCourseXP totalExerciseXP completedQuizzes answeredQuestions completedExercises"
     );
 
     if (!userProgress) {
@@ -91,6 +101,9 @@ export const getUserProgress = async (req, res) => {
         exerciseXP: {},
         totalCourseXP: 0,
         totalExerciseXP: 0,
+        completedQuizzes: [],
+        answeredQuestions: {}, // ✅ Add this
+        completedExercises: [], // ✅ Add this
       });
     }
 
@@ -112,6 +125,16 @@ export const getUserProgress = async (req, res) => {
       recalculatedTotalExerciseXP += xp;
     }
 
+    // ✅ Convert answeredQuestions Map to plain object
+    const answeredQuestionsObject = {};
+    if (userProgress.answeredQuestions) {
+      for (const [quizId, questionIds] of userProgress.answeredQuestions) {
+        answeredQuestionsObject[quizId] = questionIds.map((id) =>
+          id.toString()
+        );
+      }
+    }
+
     return res.status(200).json({
       _id: userProgress._id,
       courseXP: courseXPObject,
@@ -119,6 +142,8 @@ export const getUserProgress = async (req, res) => {
       totalCourseXP: recalculatedTotalCourseXP,
       totalExerciseXP: recalculatedTotalExerciseXP,
       completedQuizzes: userProgress.completedQuizzes || [],
+      answeredQuestions: answeredQuestionsObject, // ✅ Include this
+      completedExercises: userProgress.completedExercises || [], // ✅ Include this
     });
   } catch (err) {
     console.error("User Progress Fetch Error:", err.message);
@@ -126,12 +151,12 @@ export const getUserProgress = async (req, res) => {
   }
 };
 
-
 // recordExerciseAttempt route
 
 export const recordExerciseAttempt = async (req, res) => {
   try {
-    const { userId } = req.user;
+    // ✅ Fix: use req.user._id instead of req.user.userId
+    const userId = req.user._id;
     const { courseId, exerciseId, questionId, xp } = req.body;
 
     let userProgress = await UserProgress.findOne({ userId });
@@ -142,24 +167,43 @@ export const recordExerciseAttempt = async (req, res) => {
         exerciseXP: new Map(),
         totalExerciseXP: 0,
         completedExercises: [],
+        // ✅ Add missing fields for consistency
+        courseXP: new Map(),
+        totalCourseXP: 0,
+        completedQuizzes: [],
+        answeredQuestions: new Map(),
       });
     }
 
-    // Add XP for this exercise question
-    const currentXP = userProgress.exerciseXP.get(courseId) || 0;
-    userProgress.exerciseXP.set(courseId, currentXP + xp);
-    userProgress.totalExerciseXP += xp;
+    // ✅ Convert courseId to string for consistency
+    const courseIdStr = courseId.toString();
 
-   
-    if (!userProgress.completedExercises.some(id => id.toString() === exerciseId)) {
+    // Add XP for this exercise question
+    const currentXP = userProgress.exerciseXP.get(courseIdStr) || 0;
+    userProgress.exerciseXP.set(courseIdStr, currentXP + xp);
+
+    // ✅ Recalculate total exercise XP from all courses
+    userProgress.totalExerciseXP = Array.from(
+      userProgress.exerciseXP.values()
+    ).reduce((sum, xp) => sum + xp, 0);
+
+    if (
+      !userProgress.completedExercises.some(
+        (id) => id.toString() === exerciseId
+      )
+    ) {
       userProgress.completedExercises.push(exerciseId);
     }
 
     await userProgress.save();
 
-    return res.status(200).json({ success: true, totalExerciseXP: userProgress.totalExerciseXP });
+    return res
+      .status(200)
+      .json({ success: true, totalExerciseXP: userProgress.totalExerciseXP });
   } catch (error) {
     console.error("Error in recordExerciseAttempt:", error);
-    return res.status(500).json({ message: "Failed to record exercise attempt" });
+    return res
+      .status(500)
+      .json({ message: "Failed to record exercise attempt" });
   }
 };

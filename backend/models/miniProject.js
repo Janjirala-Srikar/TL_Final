@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const miniProjectSchema = new mongoose.Schema({
   title: String,
@@ -9,5 +9,5 @@ const miniProjectSchema = new mongoose.Schema({
   clubOnly: Boolean,
 });
 
-const MiniProject = mongoose.model('MiniProject', miniProjectSchema);
+const MiniProject = mongoose.model("MiniProject", miniProjectSchema);
 export default MiniProject;
