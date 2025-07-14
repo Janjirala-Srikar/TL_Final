@@ -17,6 +17,10 @@ import compilerRoutes from './routes/compilerRoutes.js';
 import xpRoutes from './routes/xpRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 
+//dashboard integration with project section
+import  dashboardProjectRoutes from './routes/dashboardProjectRoutes.js';
+
+
 import miniRouter from './routes/mini.js';
 import majorRouter from './routes/major.js';
 import bookingRouterModule from './routes/Booking.js';
@@ -94,6 +98,7 @@ app.use('/api/certification', certificationRoutes);
 app.use('/api/compiler', compilerRoutes);
 app.use('/api/xp', xpRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api',dashboardProjectRoutes);
 
 // ✅ BUILD PAGE Routes
 app.use('/api/mini-projects', miniRouter);
