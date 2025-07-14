@@ -2,6 +2,7 @@
 
 ### Q: Create a Java program that stores and displays personal details like name, age, and mobile number using appropriate data types.
 **Real-life:** Student ID form entry at college.
+
 ```java
 public class PersonalDetails {
     public static void main(String[] args) {
