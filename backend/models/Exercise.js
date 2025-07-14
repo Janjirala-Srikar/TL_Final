@@ -1,6 +1,3 @@
-import mongoose from "mongoose";
-const { Schema } = mongoose;
-
 const exerciseSchema = new Schema(
   {
     courseId: {
@@ -9,16 +6,19 @@ const exerciseSchema = new Schema(
       required: true,
     },
     topicTitle: {
-      // pavan I changed this from title to topicTitle for more understanding
       type: String,
       required: true,
     },
-    theory: { type: String },
-    starterCode: { type: String },
-    testCases: [{ type: String }],
+    question: {
+      type: String, // question text
+      required: true,
+    },
+    realLifeApplication: {
+      type: String, // real-life context
+    },
+    exerciseAnswers: {
+      type: String, // Full code in string/markdown format
+    },
   },
   { timestamps: true }
 );
-
-const Exercise = mongoose.model("Exercise", exerciseSchema);
-export default Exercise;
