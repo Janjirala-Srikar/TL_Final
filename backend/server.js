@@ -18,6 +18,7 @@ import certificationRoutes from './routes/certificationRoutes.js';
 import compilerRoutes from './routes/compilerRoutes.js';
 import xpRoutes from './routes/xpRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import dashboardProjectRoutes from './routes/dashboardProjectRoutes.js';
 
 import miniRouter from "./routes/mini.js";
 import majorRouter from "./routes/major.js";
@@ -88,6 +89,7 @@ app.use('/api/certification', certificationRoutes);
 app.use('/api/compiler', compilerRoutes);
 app.use('/api/xp', xpRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api', dashboardProjectRoutes);
 
 // ✅ BUILD PAGE Routes
 app.use("/api/mini-projects", miniRouter);
