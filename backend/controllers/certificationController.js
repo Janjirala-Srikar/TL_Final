@@ -1,51 +1,77 @@
-import PDFDocument from "pdfkit";
-import { sendPaymentStatusEmail } from "../utils/sendCertificate.js";
+import fs from "fs";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import { PDFDocument, rgb } from "pdf-lib";
 import { sendCertificate } from "../utils/sendCertificate.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 export const generateCertificateController = async (req, res) => {
   try {
     const { name, email, courseName, xp } = req.body;
 
-    // 1. Generate certificate PDF as buffer
-    const doc = new PDFDocument();
-    const buffers = [];
+    // Generate Certificate ID
+    const certificateId = `TLS-${uuidv4().split("-")[0].toUpperCase()}`;
 
-    doc.on("data", buffers.push.bind(buffers));
-    doc.on("end", async () => {
-      const pdfBuffer = Buffer.concat(buffers);
+    const templatePath = `./templates/template-${courseName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+    const fontPath = path.resolve("./fonts/Slight-Regular.ttf");
 
-      // 2. Send certificate via email
-      await sendCertificate({ name, email, courseName, xp, buffer: pdfBuffer });
+    const templateBytes = fs.readFileSync(templatePath);
+    const fontBytes = fs.readFileSync(fontPath);
 
-      return res.status(200).json({
-        message: "Certificate generated and emailed successfully",
-      });
+    const pdfDoc = await PDFDocument.load(templateBytes);
+    const slightFont = await pdfDoc.embedFont(fontBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    // Student Name - Centered
+    firstPage.drawText(name, {
+      x: 150,        // adjust as needed
+      y: 300,
+      size: 40,
+      font: slightFont,
+      color:rgb(14, 25, 109)
     });
 
-    // PDF content
-    doc.fontSize(24).text("TechLearn Solutions", { align: "center" });
-    doc.moveDown();
-    doc.fontSize(20).text("Certificate of Completion", { align: "center" });
-    doc.moveDown();
-    doc
-      .fontSize(16)
-      .text(`${name} has completed the course`, { align: "center" });
-    doc
-      .fontSize(18)
-      .text(`"${courseName}"`, { align: "center", underline: true });
-    doc.moveDown();
-    doc.text(`XP Earned: ${xp}`, { align: "center" });
-    doc.moveDown();
-
-    doc.text(`Issued on: ${new Date().toLocaleDateString()}`, {
-      align: "center",
+    // ➤ Certificate ID - Bottom Right
+    firstPage.drawText(`ID: ${certificateId}`, {
+      x: 450,       // adjust depending on template width
+      y: 40,
+      size: 10,
+      font: slightFont,
+      color: rgb(14, 25, 109)
     });
 
-    doc.end(); // End PDF stream
+    // ➤ Issue Date - Bottom Left
+    firstPage.drawText(`Issued on: ${new Date().toLocaleDateString("en-IN")}`, {
+      x: 40,
+      y: 40,
+      size: 10,
+      font: slightFont,
+      color: rgb(14, 25, 109)
+    });
+
+    const finalPdfBuffer = await pdfDoc.save();
+
+    // Upload to cloudinary
+    const fileName = `certificates/${courseName}-${name}.pdf`;
+    const cloudinaryUrl = await uploadToCloudinary(finalPdfBuffer, fileName);
+
+    // Send Email
+    await sendCertificate({
+      name,
+      email,
+      courseName,
+      xp,
+      buffer: Buffer.from(finalPdfBuffer),
+    });
+
+    return res.status(200).json({
+      message: "Certificate generated and emailed successfully",
+      certificateId,
+      url: cloudinaryUrl,
+    });
   } catch (err) {
     console.error("Certificate generation error:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to generate/send certificate" });
+    return res.status(500).json({ error: "Failed to generate/send certificate" });
   }
 };

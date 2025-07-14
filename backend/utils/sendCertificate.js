@@ -1,15 +1,10 @@
-import nodemailer from "nodemailer";
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
 
-// Sends certificate (with buffer) after successful course completion
-export const sendCertificate = async ({
-  name,
-  email,
-  courseName,
-  xp,
-  buffer,
-}) => {
+export const sendCertificate = async ({ name, email, courseName, xp, buffer, certificateId, cloudUrl }) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -19,17 +14,18 @@ export const sendCertificate = async ({
   const mailOptions = {
     from: `"TechLearn Solutions" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: `Certificate for ${courseName}`,
+    subject: `Your Certificate for ${courseName}`,
     html: `
-      <h2>Hi ${name},</h2>
-      <p>You have successfully completed the course <strong>${courseName}</strong> with <strong>${xp} XP</strong>.</p>
-      <p>Your certificate is attached and also available on the cloud.</p>
+      <h2>Congratulations, ${name}!</h2>
+      <p>You’ve successfully completed the <strong>${courseName}</strong> course with <strong>${xp} XP</strong>.</p>
+      <p>Certificate ID: <code>${certificateId}</code></p>
+      <p><a href="${cloudUrl}">Download from Cloud</a></p>
     `,
     attachments: [
       {
         filename: `${courseName}-${name}.pdf`,
         content: buffer,
-        contentType: "application/pdf",
+        contentType: 'application/pdf',
       },
     ],
   };
@@ -37,34 +33,34 @@ export const sendCertificate = async ({
   await transporter.sendMail(mailOptions);
 };
 
-// Sends simple payment status update
 export const sendPaymentStatusEmail = async ({ user, status }) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 587,
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
   });
 
-  let mailOptions;
-  if (status === "approved") {
-    mailOptions = {
-      from: `<${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Your Certificate is Ready!",
-      text: `Congratulations ${user.firstName}, your payment is approved. Certificate attached.`,
-    };
-  } else {
-    mailOptions = {
-      from: `<${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Certificate Rejected",
-      text: `Sorry ${user.firstName}, There were issues with your payment. Please contact support.`,
-    };
-  }
+  const subject =
+    status === "approved"
+      ? "Payment Approved - TechLearn Certificate"
+      : "Payment Rejected - TechLearn Certificate";
+
+  const html =
+    status === "approved"
+      ? `<p>Hi ${user.firstName},</p>
+         <p>Your payment has been approved! Your certificate will be sent to you shortly.</p>`
+      : `<p>Hi ${user.firstName},</p>
+         <p>Unfortunately, your payment has been rejected. Please try again or contact support.</p>`;
+
+  const mailOptions = {
+    from: `"TechLearn Solutions" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject,
+    html,
+  };
 
   await transporter.sendMail(mailOptions);
 };
+

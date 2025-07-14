@@ -103,26 +103,32 @@ const parseQuizMarkdown = (filePath) => {
 // Exercise Markdown Parser
 const parseIndividualExercises = (filePath) => {
   const content = fs.readFileSync(filePath, "utf-8");
-  const blocks = content.split(/- \*\*Q:\*\*/).slice(1);
+
+  const blocks = content.split(/^### Q:/m).slice(1); // each exercise block
   const exercises = [];
 
+  // Get topic name from top-level ## heading
+  const topicMatch = content.match(/^##\s+\d+\.\s+(.*)/m);
+  const topic = topicMatch ? topicMatch[1].trim() : "Unknown Topic";
+
   for (const block of blocks) {
-    const questionMatch = block.match(/^(.+?)\n/);
-    const question = questionMatch ? questionMatch[1].trim() : null;
+    const lines = block.trim().split("\n");
 
-    const realLifeMatch = block.match(/- \*Real-life:\* (.+?)(\n|$)/);
-    const realLife = realLifeMatch ? realLifeMatch[1].trim() : "";
+    const question = lines[0].trim();
 
-    const codeStartIndex = block.indexOf("import");
-    const code = codeStartIndex !== -1
-      ? block.slice(codeStartIndex)
-          .replace(/\\\n/g, "\n")
-          .replace(/`/g, "")
-          .trim()
+    const realLifeLine = lines.find((line) =>
+      line.startsWith("**Real-life:**")
+    );
+    const realLife = realLifeLine
+      ? realLifeLine.replace("**Real-life:**", "").trim()
       : "";
+
+    const codeMatch = block.match(/```java([\s\S]*?)```/);
+    const code = codeMatch ? codeMatch[1].trim() : null;
 
     if (question && code) {
       exercises.push({
+        topic,
         question,
         realLifeApplication: realLife,
         exerciseAnswers: code,
