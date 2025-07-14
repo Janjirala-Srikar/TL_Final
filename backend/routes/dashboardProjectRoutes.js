@@ -1,6 +1,6 @@
 import express from 'express';
 import Mini from '../models/miniProject.js';
-import Mid from '../models/midProject.js';
+import Mid from '../models/MidProject.js';
 import Major from '../models/majorProject.js';
 import { protect } from '../middleware/authMiddleware.js';
 
