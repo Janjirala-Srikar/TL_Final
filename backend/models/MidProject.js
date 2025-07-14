@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const midProjectSchema = new mongoose.Schema({
   title: String,
@@ -8,5 +8,5 @@ const midProjectSchema = new mongoose.Schema({
   clubOnly: Boolean,
 });
 
-const MidProject = mongoose.model('MidProject', midProjectSchema);
+const MidProject = mongoose.model("MidProject", midProjectSchema);
 export default MidProject;

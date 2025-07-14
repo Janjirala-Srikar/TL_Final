@@ -1,5 +1,5 @@
-const DBconnect = require('./config/db');
-const MidProjectModel = require('./models/MidProject');
+const DBconnect = require("./config/db");
+const MidProjectModel = require("./models/MidProject");
 
 const seedSampleProjects = async () => {
   const sampleProjects = [
@@ -10,9 +10,9 @@ const seedSampleProjects = async () => {
       guideSteps: [
         "Design the calculator layout in HTML and CSS.",
         "Implement basic arithmetic operations using JavaScript.",
-        "Add event listeners for button clicks."
+        "Add event listeners for button clicks.",
       ],
-      clubOnly: false
+      clubOnly: false,
     },
     {
       title: "To-Do List App",
@@ -22,9 +22,9 @@ const seedSampleProjects = async () => {
         "Set up a React frontend.",
         "Create a Node.js backend with Express.",
         "Connect to a MongoDB database.",
-        "Implement CRUD operations for tasks."
+        "Implement CRUD operations for tasks.",
       ],
-      clubOnly: true
+      clubOnly: true,
     },
     {
       title: "Basic Blog Platform",
@@ -34,10 +34,10 @@ const seedSampleProjects = async () => {
         "Set up a Flask application.",
         "Design the database schema for posts and users.",
         "Implement user authentication.",
-        "Create views for creating, reading, updating, and deleting posts."
+        "Create views for creating, reading, updating, and deleting posts.",
       ],
-      clubOnly: false
-    }
+      clubOnly: false,
+    },
   ];
 
   const count = await MidProjectModel.countDocuments();
@@ -49,11 +49,11 @@ const seedSampleProjects = async () => {
   }
 };
 
-DBconnect(); 
+DBconnect();
 
 seedSampleProjects()
   .then(() => process.exit(0))
-  .catch(err => {
+  .catch((err) => {
     console.error("Seeding failed:", err);
     process.exit(1);
   });

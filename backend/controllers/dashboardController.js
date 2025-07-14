@@ -23,7 +23,10 @@ export const getDashboardData = async (req, res) => {
 
     res.status(200).json({
       courseProgress: progress.courseProgress || {},
-      exerciseProgress: progress.exerciseProgress || { totalExercises: 0, completedExercises: 0 },
+      exerciseProgress: progress.exerciseProgress || {
+        totalExercises: 0,
+        completedExercises: 0,
+      },
       calendarActivity: progress.calendarActivity || {},
       recentActivity: progress.recentActivity || {},
       enrolledCourses: progress.enrolledCourses || [],

@@ -6,7 +6,6 @@ import Notes from "../models/Notes.js";
 
 dotenv.config();
 
-
 const clearCourses = async () => {
   try {
     // Connect to MongoDB

@@ -6,34 +6,39 @@ const userSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     lastName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     email: {
       type: String,
       required: true,
       unique: true,
       trim: true,
-      lowercase: true
+      lowercase: true,
     },
     password: {
       type: String,
-      required: true
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
     },
     isClub: {
       type: Boolean,
-      default: false
+      default: false,
     },
     transactionId: {
       type: String,
-      default: null
+      default: null,
     },
     resetPasswordToken: String,
-    resetPasswordExpires: Date
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );

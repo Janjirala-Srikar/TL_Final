@@ -2,7 +2,6 @@ import PDFDocument from "pdfkit";
 import { sendPaymentStatusEmail } from "../utils/sendCertificate.js";
 import { sendCertificate } from "../utils/sendCertificate.js";
 
-
 export const generateCertificateController = async (req, res) => {
   try {
     const { name, email, courseName, xp } = req.body;
@@ -50,5 +49,3 @@ export const generateCertificateController = async (req, res) => {
       .json({ error: "Failed to generate/send certificate" });
   }
 };
-
-
