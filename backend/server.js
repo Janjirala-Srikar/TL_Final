@@ -78,6 +78,11 @@ app.use(
   )
 );
 
+
+app.get('/', (req, res) => {
+  res.send('Techlearn Backend API is running!');
+});
+
 // ✅ AUTH + LEARN Routes
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/courses', courseRoutes);
