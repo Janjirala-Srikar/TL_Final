@@ -116,4 +116,21 @@ router.post("/:courseId/:exerciseId/submit-code", protect, async (req, res) => {
   }
 });
 
+// Get all exercises for a course
+router.get("/:courseId", protect, async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ error: "Invalid course ID" });
+    }
+
+    const exercises = await Exercise.find({ courseId });
+    res.status(200).json(exercises);
+  } catch (err) {
+    console.error("Fetch exercises error:", err.message);
+    res.status(500).json({ error: "Failed to fetch exercises" });
+  }
+});
+
 export default router;
