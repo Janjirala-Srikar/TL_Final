@@ -256,9 +256,9 @@ export const insertJavaMarkdownContent = async () => {
             realLifeApplication: ex.realLifeApplication,
             exerciseAnswers: ex.exerciseAnswers,
           });
-          console.log(`Inserted exercise: ${ex.question}`);
+          // console.log(`Inserted exercise: ${ex.question}`);
         } else {
-          console.log(`Exercise already exists: ${ex.question}`);
+          // console.log(`Exercise already exists: ${ex.question}`);
         }
       }
     }
