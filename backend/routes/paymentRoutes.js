@@ -12,7 +12,7 @@ const paymentRouter = Router();
 // Combined endpoint: Check eligibility and allow payment if eligible
 paymentRouter.get("/:courseId/initiate", protect, initiatePayment);
 
-// Submit payment details (only after initiation confirms eligibility)
+// Only after the eligibility is confirmed, this button is enabled
 paymentRouter.post("/Pay", protect, submitPayment);
 
 // Admin routes
