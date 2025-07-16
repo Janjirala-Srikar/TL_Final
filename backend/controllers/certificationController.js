@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { sendCertificate } from "../utils/sendCertificate.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
@@ -19,35 +20,34 @@ export const generateCertificateController = async (req, res) => {
     const fontBytes = fs.readFileSync(fontPath);
 
     const pdfDoc = await PDFDocument.load(templateBytes);
+    pdfDoc.registerFontkit(fontkit);
     const slightFont = await pdfDoc.embedFont(fontBytes);
     const pages = pdfDoc.getPages();
     const firstPage = pages[0];
 
     // Student Name - Centered
     firstPage.drawText(name, {
-      x: 150,        // adjust as needed
-      y: 300,
-      size: 40,
+      x: 180,        // adjust as needed
+      y: 250,
+      size: 35,
       font: slightFont,
-      color:rgb(14, 25, 109)
+      color: rgb(14 / 255, 25 / 255, 109 / 255)
     });
 
     // ➤ Certificate ID - Bottom Right
-    firstPage.drawText(`ID: ${certificateId}`, {
-      x: 450,       // adjust depending on template width
-      y: 40,
-      size: 10,
-      font: slightFont,
-      color: rgb(14, 25, 109)
+    firstPage.drawText(`${certificateId}`, {
+      x: 633,       // adjust depending on template width
+      y: 100,
+      size: 20,
+      color: rgb(14 / 255, 25 / 255, 109 / 255)
     });
 
     // ➤ Issue Date - Bottom Left
-    firstPage.drawText(`Issued on: ${new Date().toLocaleDateString("en-IN")}`, {
-      x: 40,
-      y: 40,
-      size: 10,
-      font: slightFont,
-      color: rgb(14, 25, 109)
+    firstPage.drawText(`${new Date().toLocaleDateString("en-IN")}`, {
+      x: 197,
+      y: 100,
+      size: 20,
+      color: rgb(14 / 255, 25 / 255, 109 / 255)
     });
 
     const finalPdfBuffer = await pdfDoc.save();
@@ -58,11 +58,13 @@ export const generateCertificateController = async (req, res) => {
 
     // Send Email
     await sendCertificate({
-      name,
-      email,
-      courseName,
-      xp,
-      buffer: Buffer.from(finalPdfBuffer),
+     name,
+     email,
+     courseName,
+     xp,
+     buffer: Buffer.from(finalPdfBuffer),
+     certificateId,
+     cloudinaryUrl,
     });
 
     return res.status(200).json({
