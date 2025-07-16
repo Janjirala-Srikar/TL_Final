@@ -19,7 +19,6 @@ export const sendCertificate = async ({ name, email, courseName, xp, buffer, cer
       <h2>Congratulations, ${name}!</h2>
       <p>You’ve successfully completed the <strong>${courseName}</strong> course with <strong>${xp} XP</strong>.</p>
       <p>Certificate ID: <code>${certificateId}</code></p>
-      <p><a href="${cloudUrl}">Download from Cloud</a></p>
     `,
     attachments: [
       {
