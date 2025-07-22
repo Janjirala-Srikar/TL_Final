@@ -42,7 +42,7 @@
 //   }
 // };
 
-import UserProgress from "../models/UserProgress";
+import UserProgress from "../models/UserProgress.js";
 
 export const getDashboardData = async (req, res) => {
   try {
