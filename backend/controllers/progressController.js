@@ -62,7 +62,6 @@ export const updateExerciseProgress = async (req, res) => {
   }
 };
 
-
 //updating calender activity for the user
 export const updateCalendarActivity = async (req, res) => {
   const { date, status } = req.body; // e.g., date: "2025-06-25", status: "Completed"

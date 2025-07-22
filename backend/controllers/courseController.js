@@ -94,7 +94,9 @@ export const submitQuiz = async (req, res) => {
     if (!question)
       return res.status(404).json({ message: "Question not found" });
 
-    const isCorrect = question.correctAnswer === selectedOption;
+    // FIX: Convert selectedOption to number for proper comparison
+    const selectedOptionNumber = parseInt(selectedOption);
+    const isCorrect = question.correctAnswer === selectedOptionNumber;
 
     const alreadyAnswered = await checkIfQuestionAnswered({
       userId: req.user._id,
