@@ -8,17 +8,17 @@ import { insertJavaMarkdownContent } from "./config/insertJavaMarkdown.js";
 import { insertPythonMarkdownContent } from "./config/insertPythonMarkdown.js";
 
 // Route imports
-import exerciseRoutes from './routes/exerciseRoutes.js';
-import courseRoutes from './routes/courseRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import userProgressRoutes from './routes/userProgressRoutes.js';
-import paymentRoutes from './routes/paymentRoutes.js';
-import certificationRoutes from './routes/certificationRoutes.js';
-import compilerRoutes from './routes/compilerRoutes.js';
-import xpRoutes from './routes/xpRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js';
-import dashboardProjectRoutes from './routes/dashboardProjectRoutes.js';
+import exerciseRoutes from "./routes/exerciseRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import userProgressRoutes from "./routes/userProgressRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import certificationRoutes from "./routes/certificationRoutes.js";
+import compilerRoutes from "./routes/compilerRoutes.js";
+import xpRoutes from "./routes/xpRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import dashboardProjectRoutes from "./routes/dashboardProjectRoutes.js";
 
 import miniRouter from "./routes/mini.js";
 import majorRouter from "./routes/major.js";
@@ -78,23 +78,22 @@ app.use(
   )
 );
 
-
-app.get('/', (req, res) => {
-  res.send('Techlearn Backend API is running!');
+app.get("/", (req, res) => {
+  res.send("Techlearn Backend API is running!");
 });
 
 // ✅ AUTH + LEARN Routes
-app.use('/api/exercises', exerciseRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/user-progress', userProgressRoutes);
-app.use('/api/certificate', paymentRoutes);
-app.use('/api/certification', certificationRoutes);
-app.use('/api/compiler', compilerRoutes);
-app.use('/api/xp', xpRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api', dashboardProjectRoutes);
+app.use("/api/exercises", exerciseRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user-progress", userProgressRoutes);
+app.use("/api/certificate", paymentRoutes);
+app.use("/api/certification", certificationRoutes);
+app.use("/api/compiler", compilerRoutes);
+app.use("/api/xp", xpRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api", dashboardProjectRoutes);
 
 // ✅ BUILD PAGE Routes
 app.use("/api/mini-projects", miniRouter);
