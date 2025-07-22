@@ -77,11 +77,9 @@ router.post("/:courseId/:exerciseId/submit-code", protect, async (req, res) => {
 
   const languageId = languageMap[language.toLowerCase()];
   if (!languageId) {
-    return res
-      .status(400)
-      .json({
-        error: "Unsupported language. Please provide 'python' or 'java'.",
-      });
+    return res.status(400).json({
+      error: "Unsupported language. Please provide 'python' or 'java'.",
+    });
   }
 
   try {
