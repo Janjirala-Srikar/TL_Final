@@ -44,6 +44,12 @@ export const updateExerciseProgress = async (req, res) => {
       completedExercises,
     };
 
+    // 🟢 Auto-update calendarActivity for today's exercise
+    const today = new Date().toISOString().split("T")[0];
+    progress.calendarActivity = progress.calendarActivity || new Map();
+    progress.calendarActivity.set(today, "Completed");
+    progress.markModified("calendarActivity");
+
     await progress.save();
 
     res.status(200).json({
@@ -55,6 +61,7 @@ export const updateExerciseProgress = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 //updating calender activity for the user
 export const updateCalendarActivity = async (req, res) => {
