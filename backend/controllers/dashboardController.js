@@ -48,8 +48,8 @@ export const getDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
     const progress = await UserProgress.findOne({ userId })
-      .populate("completedExercises", "title")
-      .populate("completedQuizzes", "title");
+      .populate("completedExercises", "topicTitle")
+      .populate("completedQuizzes", "topicTitle");
 
     if (!progress) {
       // Send default if progress not found
@@ -62,8 +62,32 @@ export const getDashboardData = async (req, res) => {
         completedQuizzes: [],
         calendarActivity: {},
         answeredQuestions: {},
+        courseProgress: { progressPercent: 0 },
+        exerciseProgress: { totalExercises: 0, completedExercises: 0 },
+        quizProgress: { totalQuizzes: 0, completedQuizzes: 0 },
       });
     }
+
+    // Calculate percentage-based progress
+    const exerciseProgress = progress.exerciseProgress || {
+      totalExercises: 0,
+      completedExercises: 0,
+    };
+    const quizProgress = progress.quizProgress || {
+      totalQuizzes: 0,
+      completedQuizzes: 0,
+    };
+    const exercisePercent =
+      exerciseProgress.totalExercises > 0
+        ? (exerciseProgress.completedExercises /
+            exerciseProgress.totalExercises) *
+          100
+        : 0;
+    const quizPercent =
+      quizProgress.totalQuizzes > 0
+        ? (quizProgress.completedQuizzes / quizProgress.totalQuizzes) * 100
+        : 0;
+    const courseProgressPercent = (exercisePercent + quizPercent) / 2;
 
     // Create basic calendarActivity using timestamps (optional)
     const calendarActivity = {};
@@ -81,6 +105,9 @@ export const getDashboardData = async (req, res) => {
       completedQuizzes: progress.completedQuizzes,
       calendarActivity,
       answeredQuestions: progress.answeredQuestions,
+      courseProgress: { progressPercent: courseProgressPercent },
+      exerciseProgress,
+      quizProgress,
     });
   } catch (error) {
     console.error("Dashboard data fetch error:", error);
