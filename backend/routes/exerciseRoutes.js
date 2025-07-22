@@ -37,8 +37,11 @@ router.post("/:courseId/:exerciseId/submit", protect, async (req, res) => {
       });
     }
 
+    // FIX: Check using correct schema structure
     if (
-      progress.completedExercises.some((id) => id.toString() === exerciseId)
+      progress.completedExercises.some(
+        (item) => item.exerciseId && item.exerciseId.toString() === exerciseId
+      )
     ) {
       return res.status(400).json({ message: "Exercise already completed" });
     }
@@ -46,7 +49,13 @@ router.post("/:courseId/:exerciseId/submit", protect, async (req, res) => {
     const xpToAdd = 10;
     const currentXP = progress.exerciseXP.get(courseId) || 0;
     progress.exerciseXP.set(courseId, currentXP + xpToAdd);
-    progress.completedExercises.push(new mongoose.Types.ObjectId(exerciseId));
+
+    // FIX: Use correct schema structure with exerciseId and completedAt
+    progress.completedExercises.push({
+      exerciseId: new mongoose.Types.ObjectId(exerciseId),
+      completedAt: new Date(),
+    });
+
     await progress.save();
 
     const totalExerciseXP = [...progress.exerciseXP.values()].reduce(

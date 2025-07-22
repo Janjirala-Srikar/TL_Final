@@ -1,113 +1,119 @@
-// import UserProgress from "../models/UserProgress.js";
-
-// export const getDashboardData = async (req, res) => {
-//   try {
-//     const userId = req.user._id;
-//     let progress = await UserProgress.findOne({ userId });
-
-//     if (!progress) {
-//       // If no progress, send defaults or empty data
-//       return res.status(200).json({
-//         courseProgress: {},
-//         exerciseProgress: { totalExercises: 0, completedExercises: 0 },
-//         calendarActivity: {},
-//         recentActivity: {},
-//         enrolledCourses: [],
-//         xpPoints: {
-//           xpFromLearn: 0,
-//           xpFromBuild: 0,
-//           totalXP: 0,
-//         },
-//       });
-//     }
-
-//     res.status(200).json({
-//       courseProgress: progress.courseProgress || {},
-//       exerciseProgress: progress.exerciseProgress || {
-//         totalExercises: 0,
-//         completedExercises: 0,
-//       },
-//       calendarActivity: progress.calendarActivity || {},
-//       recentActivity: progress.recentActivity || {},
-//       enrolledCourses: progress.enrolledCourses || [],
-//       xpPoints: {
-//         xpFromLearn: progress.xpFromLearn,
-//         xpFromBuild: progress.xpFromBuild,
-//         totalXP: progress.xpFromLearn + progress.xpFromBuild,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Dashboard data fetch error:", error);
-//     res.status(500).json({ message: "Server error fetching dashboard data" });
-//   }
-// };
-
 import UserProgress from "../models/UserProgress.js";
+import Exercise from "../models/Exercise.js";
+import Quiz from "../models/Quiz.js";
 
 export const getDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
-    const progress = await UserProgress.findOne({ userId })
-      .populate("completedExercises", "topicTitle")
-      .populate("completedQuizzes", "topicTitle");
+    const progress = await UserProgress.findOne({ userId }).populate(
+      "completedExercises.exerciseId",
+      "topicTitle"
+    );
 
     if (!progress) {
-      // Send default if progress not found
+      // Calculate totals even when no progress exists
+      const totalExercises = await Exercise.countDocuments();
+      const totalQuizzes = await Quiz.countDocuments();
+
+      // Calculate total possible XP for exercises (10 XP per exercise)
+      const totalPossibleExerciseXP = totalExercises * 10;
+
+      let totalQuizQuestions = 0;
+      const allQuizzes = await Quiz.find();
+      for (const quiz of allQuizzes) {
+        totalQuizQuestions += quiz.questions.length;
+      }
+
       return res.status(200).json({
         courseXP: {},
         exerciseXP: {},
         totalCourseXP: 0,
-        totalExerciseXP: 0,
+        totalExerciseXP: totalPossibleExerciseXP,
         completedExercises: [],
-        completedQuizzes: [],
         calendarActivity: {},
         answeredQuestions: {},
         courseProgress: { progressPercent: 0 },
-        exerciseProgress: { totalExercises: 0, completedExercises: 0 },
-        quizProgress: { totalQuizzes: 0, completedQuizzes: 0 },
+        exerciseProgress: {
+          totalExercises,
+          completedExercises: 0,
+          progressPercent: 0,
+        },
+        quizProgress: {
+          totalQuizzes,
+          completedQuizzes: 0,
+          totalQuizQuestions,
+          answeredQuizQuestions: 0,
+          progressPercent: 0,
+        },
       });
     }
 
-    // Calculate percentage-based progress
-    const exerciseProgress = progress.exerciseProgress || {
-      totalExercises: 0,
-      completedExercises: 0,
-    };
-    const quizProgress = progress.quizProgress || {
-      totalQuizzes: 0,
-      completedQuizzes: 0,
-    };
+    // CALCULATE progress from actual data (no schema changes needed)
+    const totalExercises = await Exercise.countDocuments();
+    const totalQuizzes = await Quiz.countDocuments();
+
+    // Calculate total possible XP for exercises (15 XP per exercise)
+    const totalPossibleExerciseXP = totalExercises * 10;
+
+    const completedExercisesCount = progress.completedExercises.length;
+    const completedQuizzesCount = progress.completedQuizzes.length;
+
+    // Calculate quiz progress based on answered questions, not completed quizzes
+    let totalQuizQuestions = 0;
+    let answeredQuizQuestions = 0;
+
+    // Get all quizzes to count total questions
+    const allQuizzes = await Quiz.find();
+    for (const quiz of allQuizzes) {
+      totalQuizQuestions += quiz.questions.length;
+    }
+
+    // Count answered questions from progress.answeredQuestions
+    if (progress.answeredQuestions) {
+      for (const [quizId, questionIds] of progress.answeredQuestions) {
+        answeredQuizQuestions += questionIds.length;
+      }
+    }
+
     const exercisePercent =
-      exerciseProgress.totalExercises > 0
-        ? (exerciseProgress.completedExercises /
-            exerciseProgress.totalExercises) *
-          100
+      totalExercises > 0
+        ? Math.round((completedExercisesCount / totalExercises) * 1000) / 10
         : 0;
     const quizPercent =
-      quizProgress.totalQuizzes > 0
-        ? (quizProgress.completedQuizzes / quizProgress.totalQuizzes) * 100
+      totalQuizQuestions > 0
+        ? Math.round((answeredQuizQuestions / totalQuizQuestions) * 1000) / 10
         : 0;
-    const courseProgressPercent = (exercisePercent + quizPercent) / 2;
+    const courseProgressPercent =
+      Math.round(((exercisePercent + quizPercent) / 2) * 10) / 10;
 
-    // Create basic calendarActivity using timestamps (optional)
+    // Create calendar activity
     const calendarActivity = {};
     if (progress.createdAt) {
-      const dateKey = progress.createdAt.toISOString().split("T")[0]; // YYYY-MM-DD
-      calendarActivity[dateKey] = true;
+      const dateKey = progress.createdAt.toISOString().split("T")[0];
+      calendarActivity[dateKey] = "active"; // Use string instead of boolean
     }
 
     res.status(200).json({
       courseXP: progress.courseXP,
       exerciseXP: progress.exerciseXP,
       totalCourseXP: progress.totalCourseXP,
-      totalExerciseXP: progress.totalExerciseXP,
+      totalExerciseXP: totalPossibleExerciseXP, // Use calculated value instead of stored value
       completedExercises: progress.completedExercises,
-      completedQuizzes: progress.completedQuizzes,
       calendarActivity,
       answeredQuestions: progress.answeredQuestions,
-      courseProgress: { progressPercent: courseProgressPercent },
-      exerciseProgress,
-      quizProgress,
+      totalCourseProgress: { progressPercent: courseProgressPercent },
+      quizProgress: {
+        totalQuizzes,
+        completedQuizzes: completedQuizzesCount,
+        totalQuizQuestions,
+        answeredQuizQuestions,
+        progressPercent: quizPercent,
+      },
+      exerciseProgress: {
+        totalExercises,
+        completedExercises: completedExercisesCount,
+        progressPercent: exercisePercent,
+      },
     });
   } catch (error) {
     console.error("Dashboard data fetch error:", error);
