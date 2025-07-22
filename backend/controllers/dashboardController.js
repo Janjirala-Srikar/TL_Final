@@ -2,6 +2,23 @@ import UserProgress from "../models/UserProgress.js";
 import Exercise from "../models/Exercise.js";
 import Quiz from "../models/Quiz.js";
 
+// Helper function to calculate total possible XP
+const calculateTotalPossibleXP = async () => {
+  // Calculate total exercises * 10 (10 XP per exercise)
+  const totalExercises = await Exercise.countDocuments();
+  const totalExerciseXP = totalExercises * 10;
+
+  // Calculate total quiz questions * 10 (10 XP per question)
+  const allQuizzes = await Quiz.find();
+  let totalQuizQuestions = 0;
+  for (const quiz of allQuizzes) {
+    totalQuizQuestions += quiz.questions.length;
+  }
+  const totalCourseXP = totalQuizQuestions * 10;
+
+  return { totalCourseXP, totalExerciseXP };
+};
+
 export const getDashboardData = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -11,37 +28,24 @@ export const getDashboardData = async (req, res) => {
     );
 
     if (!progress) {
-      // Calculate totals even when no progress exists
-      const totalExercises = await Exercise.countDocuments();
-      const totalQuizzes = await Quiz.countDocuments();
-
-      // Calculate total possible XP for exercises (10 XP per exercise)
-      const totalPossibleExerciseXP = totalExercises * 10;
-
-      let totalQuizQuestions = 0;
-      const allQuizzes = await Quiz.find();
-      for (const quiz of allQuizzes) {
-        totalQuizQuestions += quiz.questions.length;
-      }
-
       return res.status(200).json({
         courseXP: {},
         exerciseXP: {},
-        totalCourseXP: 0,
-        totalExerciseXP: totalPossibleExerciseXP,
+        totalCourseXP: 0, // Show 0 when no progress exists
+        totalExerciseXP: 0, // Show 0 when no progress exists
         completedExercises: [],
         calendarActivity: {},
         answeredQuestions: {},
         courseProgress: { progressPercent: 0 },
         exerciseProgress: {
-          totalExercises,
+          totalExercises: 0, // Show 0 initially
           completedExercises: 0,
           progressPercent: 0,
         },
         quizProgress: {
-          totalQuizzes,
+          totalQuizzes: 0, // Show 0 initially
           completedQuizzes: 0,
-          totalQuizQuestions,
+          totalQuizQuestions: 0, // Show 0 initially
           answeredQuizQuestions: 0,
           progressPercent: 0,
         },
@@ -52,13 +56,10 @@ export const getDashboardData = async (req, res) => {
     const totalExercises = await Exercise.countDocuments();
     const totalQuizzes = await Quiz.countDocuments();
 
-    // Calculate total possible XP for exercises (15 XP per exercise)
-    const totalPossibleExerciseXP = totalExercises * 10;
-
     const completedExercisesCount = progress.completedExercises.length;
     const completedQuizzesCount = progress.completedQuizzes.length;
 
-    // Calculate quiz progress based on answered questions, not completed quizzes
+    // Calculate quiz progress based on answered questions
     let totalQuizQuestions = 0;
     let answeredQuizQuestions = 0;
 
@@ -96,8 +97,8 @@ export const getDashboardData = async (req, res) => {
     res.status(200).json({
       courseXP: progress.courseXP,
       exerciseXP: progress.exerciseXP,
-      totalCourseXP: progress.totalCourseXP,
-      totalExerciseXP: totalPossibleExerciseXP, // Use calculated value instead of stored value
+      totalCourseXP: progress.totalCourseXP, // Use stored value from database
+      totalExerciseXP: progress.totalExerciseXP, // Use stored value from database
       completedExercises: progress.completedExercises,
       calendarActivity,
       answeredQuestions: progress.answeredQuestions,

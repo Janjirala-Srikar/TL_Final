@@ -4,6 +4,22 @@ import Course from "../models/Course.js";
 import Exercise from "../models/Exercise.js";
 import mongoose from "mongoose";
 
+// Helper function to calculate total possible XP
+const calculateTotalPossibleXP = async () => {
+  // Calculate total possible XP from exercises
+  const totalExercises = await Exercise.countDocuments();
+  const totalExerciseXP = totalExercises * 10; // 10 XP per exercise
+
+  // Calculate total possible XP from all quiz questions
+  let totalCourseXP = 0;
+  const allQuizzes = await Quiz.find();
+  for (const quiz of allQuizzes) {
+    totalCourseXP += quiz.questions.length * 10; // 10 XP per question
+  }
+
+  return { totalCourseXP, totalExerciseXP };
+};
+
 // Check if a question has already been answered
 export const checkIfQuestionAnswered = async ({
   userId,
@@ -36,10 +52,10 @@ export const recordQuizAttempt = async ({
       userId,
       completedQuizzes: [],
       courseXP: new Map(),
-      totalCourseXP: 0,
+      totalCourseXP: 0, // Will be set when user attempts first quiz question
       answeredQuestions: new Map(),
       exerciseXP: new Map(),
-      totalExerciseXP: 0,
+      totalExerciseXP: 0, // Will be set when user attempts first exercise
       completedExercises: [],
     });
   }
@@ -56,7 +72,7 @@ export const recordQuizAttempt = async ({
   const currentCourseXP = userProgress.courseXP.get(courseIdStr) || 0;
   userProgress.courseXP.set(courseIdStr, currentCourseXP + xp);
 
-  // Calculate total possible XP for all quizzes in this course
+  // Calculate total possible XP for this course (both quizzes AND exercises)
   const course = await Course.findById(courseId);
   if (course) {
     let totalPossibleQuizXP = 0;
@@ -68,7 +84,10 @@ export const recordQuizAttempt = async ({
         }
       }
     }
+    // Calculate exercise XP by counting all exercises with this courseId
+    const totalPossibleExerciseXP = await Exercise.countDocuments({ courseId });
     userProgress.totalCourseXP = totalPossibleQuizXP;
+    userProgress.totalExerciseXP = totalPossibleExerciseXP * 10; // 10 XP per exercise
   }
 
   await userProgress.save();
@@ -111,24 +130,16 @@ export const getUserProgress = async (req, res) => {
     );
 
     if (!userProgress) {
-      // Calculate total possible XP even when no progress exists
-      const totalExercises = await Exercise.countDocuments();
-      const totalPossibleExerciseXP = totalExercises * 10;
-
       return res.status(200).json({
         courseXP: {},
         exerciseXP: {},
-        totalCourseXP: 0,
-        totalExerciseXP: totalPossibleExerciseXP,
+        totalCourseXP: 0, // Show 0 when no progress exists
+        totalExerciseXP: 0, // Show 0 when no progress exists
         completedQuizzes: [],
         answeredQuestions: {},
         completedExercises: [],
       });
     }
-
-    // Calculate total possible exercise XP on-the-fly
-    const totalExercises = await Exercise.countDocuments();
-    const totalPossibleExerciseXP = totalExercises * 10;
 
     // Convert Maps to plain objects for JSON response
     const courseXPObject = {};
@@ -156,8 +167,8 @@ export const getUserProgress = async (req, res) => {
       _id: userProgress._id,
       courseXP: courseXPObject,
       exerciseXP: exerciseXPObject,
-      totalCourseXP: userProgress.totalCourseXP, // Total possible XP from all quizzes
-      totalExerciseXP: totalPossibleExerciseXP, // Use calculated value instead of stored value
+      totalCourseXP: userProgress.totalCourseXP, // Use stored value from database
+      totalExerciseXP: userProgress.totalExerciseXP, // Use stored value from database
       completedQuizzes: userProgress.completedQuizzes || [],
       answeredQuestions: answeredQuestionsObject, //  Include this
       completedExercises: userProgress.completedExercises || [], //  Include this
@@ -180,10 +191,10 @@ export const recordExerciseAttempt = async (req, res) => {
       userProgress = new UserProgress({
         userId,
         exerciseXP: new Map(),
-        totalExerciseXP: 0,
+        totalExerciseXP: 0, // Will be set when user attempts first exercise
         completedExercises: [],
         courseXP: new Map(),
-        totalCourseXP: 0,
+        totalCourseXP: 0, // Will be set when user attempts first quiz question
         completedQuizzes: [],
         answeredQuestions: new Map(),
       });
@@ -195,17 +206,24 @@ export const recordExerciseAttempt = async (req, res) => {
     const currentXP = userProgress.exerciseXP.get(courseIdStr) || 0;
     userProgress.exerciseXP.set(courseIdStr, currentXP + xp);
 
-    // Calculate total possible XP for all exercises in this course
+    // Calculate total possible XP for this course (both exercises AND quizzes)
     const course = await Course.findById(courseId);
     if (course) {
-      let totalPossibleExerciseXP = 0;
+      let totalPossibleQuizXP = 0;
       for (const topic of course.topics) {
-        if (topic.exerciseId) {
-          // Each exercise gives 15 XP when completed
-          totalPossibleExerciseXP += 10;
+        if (topic.quizId) {
+          const quiz = await Quiz.findById(topic.quizId);
+          if (quiz) {
+            totalPossibleQuizXP += quiz.questions.length * 10; // 10 XP per question
+          }
         }
       }
-      userProgress.totalExerciseXP = totalPossibleExerciseXP;
+      // Calculate exercise XP by counting all exercises with this courseId
+      const totalPossibleExerciseXP = await Exercise.countDocuments({
+        courseId,
+      });
+      userProgress.totalExerciseXP = totalPossibleExerciseXP * 10; // 10 XP per exercise
+      userProgress.totalCourseXP = totalPossibleQuizXP;
     }
 
     // FIX: Use correct schema structure for exercise completion
