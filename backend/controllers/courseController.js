@@ -117,24 +117,6 @@ export const submitQuiz = async (req, res) => {
       xp: xpAwarded,
     });
 
-    // ✅ Find next unanswered question
-    const userProgress = await UserProgress.findOne({ userId: req.user._id });
-    const answeredQuestionIds =
-      userProgress.answeredQuestions.get(quizId.toString()) || [];
-
-    let nextQuestionId = null;
-    const isQuizComplete = answeredQuestionIds.length === quiz.questions.length;
-
-    if (!isQuizComplete) {
-      for (let i = 0; i < quiz.questions.length; i++) {
-        const qId = quiz.questions[i]._id.toString();
-        if (!answeredQuestionIds.some((id) => id.toString() === qId)) {
-          nextQuestionId = quiz.questions[i]._id;
-          break;
-        }
-      }
-    }
-
     res.status(200).json({
       isCorrect,
       correctAnswer: question.correctAnswer,
@@ -146,7 +128,6 @@ export const submitQuiz = async (req, res) => {
         answeredQuestions: result.totalAnswered,
         remainingQuestions: quiz.questions.length - result.totalAnswered,
         isQuizComplete: result.quizComplete,
-        nextQuestionId: nextQuestionId,
       },
     });
   } catch (error) {
