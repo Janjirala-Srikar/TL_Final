@@ -3,6 +3,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import admin from "../utils/firebaseAdmin.js";
 //forgot password dependencies
 
 import crypto from "crypto";
@@ -123,42 +124,90 @@ router.post("/login", async function login(req, res) {
   }
 });
 
-/* ========== GOOGLE OAUTH ========== */
-router.post("/google", async function googleLogin(req, res) {
-  const { token } = req.body;
-  try {
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+// /* ========== GOOGLE OAUTH ========== */
+// router.post("/google", async function googleLogin(req, res) {
+//   const { token } = req.body;
+//   try {
+//     const ticket = await client.verifyIdToken({
+//       idToken: token,
+//       audience: process.env.GOOGLE_CLIENT_ID,
+//     });
 
-    const { email, name } = ticket.getPayload();
+//     const { email, name } = ticket.getPayload();
 
-    let user = await User.findOne({ email });
-    if (!user) {
-      /* create account with no local password */
+//     let user = await User.findOne({ email });
+//     if (!user) {
+//       /* create account with no local password */
+//       user = await User.create({
+//         firstName: name.split(" ")[0],
+//         lastName: name.split(" ")[1] || "",
+//         email,
+//         password: "", // no hash stored
+//       });
+//     }
+
+//     const jwtToken = generateToken(user._id);
+//     return res.status(200).json({
+//       message: "Google login successful",
+//       token: jwtToken,
+//       user: {
+//         id: user._id,
+//         firstName: user.firstName,
+//         lastName: user.lastName,
+//         email: user.email,
+//       },
+//     });
+//   } catch (err) {
+//     console.error("Google login error:", err);
+//     return res.status(401).json({ message: "Google authentication failed" });
+//   }
+// });
+
+/* =========== Firebase AUTH ========== */
+
+router.post("/firebase", async(req,res)=>{
+  const {idToken} = req.body;
+  try{
+    //verifying the firebase id token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const {email,name,uid} = decodedToken;
+    const [firstName, ...rest] = name?.split(" ") || ["", ""];
+    const lastName = rest.join(" ");
+
+    if(!email){
+      return res.status(400).json({message: "Email is required from Firebase"});
+    }
+
+    //user already exists
+    let user = await User.findOne({email});
+
+    if(!user){
+      //create user with empty password
+
       user = await User.create({
-        firstName: name.split(" ")[0],
-        lastName: name.split(" ")[1] || "",
+        firstName,
+        lastName,
         email,
-        password: "", // no hash stored
+        password: "",
       });
     }
 
-    const jwtToken = generateToken(user._id);
+    const token = generateToken(user._id);
     return res.status(200).json({
-      message: "Google login successful",
-      token: jwtToken,
-      user: {
+      message: "Firebase login successful",
+      token,
+      user:{
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
       },
     });
-  } catch (err) {
-    console.error("Google login error:", err);
-    return res.status(401).json({ message: "Google authentication failed" });
+  }catch(err){
+    console.error("Firebase login error: ",err);
+    return res.status(401).json({message: "Firebase authentication failed!"})
+    
   }
 });
 
