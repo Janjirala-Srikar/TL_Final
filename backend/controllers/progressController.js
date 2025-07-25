@@ -44,7 +44,7 @@ export const updateExerciseProgress = async (req, res) => {
       completedExercises,
     };
 
-    // 🟢 Auto-update calendarActivity for today's exercise
+    //  Auto-update calendarActivity for today's exercise
     const today = new Date().toISOString().split("T")[0];
     progress.calendarActivity = progress.calendarActivity || new Map();
     progress.calendarActivity.set(today, "Completed");
