@@ -26,6 +26,10 @@ const courseSchema = new mongoose.Schema(
         required: true,
       },
     ],
+    numTopics: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

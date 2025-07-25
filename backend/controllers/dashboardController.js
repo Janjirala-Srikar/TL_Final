@@ -1,6 +1,8 @@
 import UserProgress from "../models/UserProgress.js";
 import Exercise from "../models/Exercise.js";
 import Quiz from "../models/Quiz.js";
+import Topic from "../models/Topic.js";
+import mongoose from "mongoose";
 
 // Helper function to calculate total possible XP
 const calculateTotalPossibleXP = async () => {
@@ -119,5 +121,30 @@ export const getDashboardData = async (req, res) => {
   } catch (error) {
     console.error("Dashboard data fetch error:", error);
     res.status(500).json({ message: "Server error fetching dashboard data" });
+  }
+};
+
+export const getTopicsFromCloudinary = async (req, res) => {
+  const { courseId } = req.params;
+  if (!courseId || !mongoose.isValidObjectId(courseId)) {
+    return res.status(400).json({
+      message: "Proper Course Id required to get the topics from Cloudinary",
+    });
+  }
+  try {
+    // Find all topics for the course, sorted by index
+    const topics = await Topic.find({ courseId }).sort({ index: 1 });
+    const topicList = topics.map((topic) => ({
+      title: topic.title,
+      cloudinaryUrl: topic.cloudinaryUrl,
+      slug: topic.slug,
+      index: topic.index,
+    }));
+    res.status(200).json({ topics: topicList });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching topics from Cloudinary",
+      error: error.message,
+    });
   }
 };

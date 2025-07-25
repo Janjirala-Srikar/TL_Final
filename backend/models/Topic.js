@@ -12,14 +12,7 @@ const topicSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
-    quizId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Quiz",
-    },
-    exerciseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Exercise",
-    },
+    //Removed the quizId and exerciseId fields because we are not referencing them in the Topic model anymore
     cloudinaryUrl: {
       //to store notes and retrieve them later
       type: String,

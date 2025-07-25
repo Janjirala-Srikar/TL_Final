@@ -1,9 +1,16 @@
 import express from "express";
 import { getDashboardData } from "../controllers/dashboardController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { isAdmin, protect } from "../middleware/authMiddleware.js";
 
-const router = express.Router();
+const dashboardRouter = express.Router();
 
-router.get("/", protect, getDashboardData);
+dashboardRouter.get("/", protect, getDashboardData);
 
-export default router;
+dashboardRouter.get(
+  "/learn/courses/:courseId/topics",
+  isAdmin,
+  protect,
+  getTopicsFromCloudinary
+);
+
+export default dashboardRouter;
